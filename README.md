@@ -15,11 +15,11 @@ This script provides functionality to back up files and directories either local
    - You will be prompted to enter the path of the file or directory you want to back up.
    - Then, you will be asked to specify the destination path to store the backup.
    - The script will create the backup locally in the specified destination folder.
-[backup1](backup1.png)
+![backup1](backup1.png)
 2. **Remote Backup:**
    - In this case, you’ll enter the path on your local device, the remote destination path, and the IP address and user of the remote server.
    - The file or directory will be backed up and transferred to the remote server using `scp`.
-[backup2](backup2.png)
+![backup2](backup2.png)
 ### Requirements
 - **SSH Access:** The remote server should be configured to accept SSH connections.
 - **Tools:** Ensure that the tools `scp` and `tar` are available on your system.
