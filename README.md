@@ -28,18 +28,18 @@ This script provides functionality to back up files and directories either local
 ### How to Install
 1. Clone the repository to your machine:
     ```bash
-    git clone https://github.com/username/repository-name.git
-    cd repository-name
+    git clone https://github.com/Yahia58/Backup-Script.git
+    cd Backup-Script
     ```
 
 2. Make the script executable:
     ```bash
-    chmod +x backup.sh
+    chmod +x backup
     ```
 
 3. Run the script:
     ```bash
-    ./backup.sh
+    ./backup
     ```
 
 ### Notes
