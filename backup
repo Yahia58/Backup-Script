@@ -1,0 +1,90 @@
+#!/bin/bash
+
+# Get the current user
+USER_NAME=$(whoami)
+
+# Log directory for the current user
+LOG_DIR="/home/$USER_NAME/backups/logs"
+mkdir -p "$LOG_DIR"  # Ensure the directory exists
+
+LOG_FILE="$LOG_DIR/backup.log"
+ERROR_LOG="$LOG_DIR/backup_error.log"
+
+# Local backup function
+localdevice() {
+    read -p "Enter the file or directory path that you want to back up: " SRC_DIR
+    read -p "Enter the destination path where you want to save the backup: " DEST_DIR
+    
+    # Expand the tilde to full path
+    DEST_DIR=$(eval echo "$DEST_DIR")
+    echo "DEBUG: Destination directory is $DEST_DIR" >> "$LOG_FILE"
+    
+    if [[ ! -d "$DEST_DIR" ]]; then
+        echo "Destination directory does not exist. Creating it..." >> "$LOG_FILE"
+        mkdir -p "$DEST_DIR" || { echo "Failed to create destination directory" >> "$ERROR_LOG"; exit 1; }
+    fi
+    
+    DATE=$(date +%F-%T)
+    BACKUP_FILE="/tmp/backup-$DATE.tar.gz"
+    
+    if [[ -e "$SRC_DIR" ]]; then
+        echo "DEBUG: Starting backup for $SRC_DIR" >> "$LOG_FILE"
+        tar -czf "$BACKUP_FILE" "$SRC_DIR" >> "$LOG_FILE" 2>>"$ERROR_LOG" || { echo "Failed to create backup file" >> "$ERROR_LOG"; exit 1; }
+        echo "DEBUG: Backup file $BACKUP_FILE created successfully." >> "$LOG_FILE"
+        
+        mv "$BACKUP_FILE" "$DEST_DIR/" || { echo "Failed to move backup file" >> "$ERROR_LOG"; exit 1; }
+        echo "Backup Successful: $BACKUP_FILE to $DEST_DIR" >> "$LOG_FILE"
+    else
+        echo "Source file/directory does not exist. Please check the path." >> "$ERROR_LOG"
+        exit 1
+    fi
+}
+
+# Remote backup function
+remotedevice(){
+    read -p "Enter the file or directory path that you want to back up: " SRC_DIR
+    read -p "Enter the destination path that you want to save the backup in it: " DEST_DIR
+    read -p "Enter the remote server IP: " REMOTE_SERVER
+    read -p "Enter the remote user: " REMOTE_USER
+
+    # Define log and backup file names
+    LOG_FILE="/home/$USER_NAME/backups/logs/backup.log"
+    DATE=$(date +%F-%T)
+    BACKUP_FILE="backup-$DATE.tar.gz"
+
+    # Backup file creation handling for directories or files
+    if [ -d "$SRC_DIR" ]; then
+        tar -czf "/tmp/$BACKUP_FILE" -C "$SRC_DIR" .  # Archive contents if it's a directory
+    else
+        tar -czf "/tmp/$BACKUP_FILE" "$SRC_DIR"  # Archive directly if it's a file
+    fi
+
+    # Check if the backup file is created before proceeding with SCP
+    if [[ -f "/tmp/$BACKUP_FILE" ]]; then
+        scp "/tmp/$BACKUP_FILE" "$REMOTE_USER@$REMOTE_SERVER:$DEST_DIR/"  # Ensure proper remote SCP path
+        if [[ $? -eq 0 ]]; then
+            echo "Backup Successful: $BACKUP_FILE to $REMOTE_USER" >> "$LOG_FILE"
+        else
+            echo "Backup Failed!" >> "$LOG_FILE"
+        fi
+    else
+        echo "Backup file creation failed!" >> "$ERROR_LOG"
+    fi
+}
+
+# Main menu
+PS3="Select an option [1-3]: "
+echo -e "\t\t\t------------------------------------"
+echo -e "\t\t\t|             Main Menu            |"
+echo -e "\t\t\t------------------------------------"
+
+select OPTION in "Backup on this device" \
+                  "Backup to a remote server" \
+                  "Exit - Close the menu"; do
+    case $REPLY in
+        1) echo "Backing up now..."; localdevice ;;
+        2) echo "Remote backup process started..."; remotedevice ;;
+        3) echo "Exiting..."; break ;;
+        *) echo "Invalid option, please try again." ;;
+    esac
+done
